@@ -4,4 +4,21 @@
     <string name="channel_name">Data na barra de status</string>
     <string name="channel_description">Mantém o dia atual visível na barra de status.</string>
     <string name="notification_title">DatePin ativo</string>
+
+    <string name="hero_title">Sua data, sempre à vista.</string>
+    <string name="hero_subtitle">Mostre o dia atual na barra de status sem anúncios e sem cadastro.</string>
+    <string name="status_active">DatePin está ativo</string>
+    <string name="status_inactive">DatePin está desativado</string>
+    <string name="status_active_desc">O dia atual permanece visível na barra de status.</string>
+    <string name="status_inactive_desc">Ative para fixar o dia atual na barra de status.</string>
+    <string name="activate">Ativar DatePin</string>
+    <string name="deactivate">Desativar DatePin</string>
+    <string name="today_label">Hoje</string>
+    <string name="appearance_title">Aparência do número</string>
+    <string name="appearance_subtitle">Escolha como o dia aparece na barra.</string>
+    <string name="style_bold">Negrito</string>
+    <string name="style_clean">Limpo</string>
+    <string name="style_compact">Compacto</string>
+    <string name="style_free">Grátis</string>
+    <string name="privacy_line">Sem anúncios • Sem conta • Funciona offline</string>
 </resources>
