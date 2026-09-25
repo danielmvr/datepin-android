@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DatePin</string>
+    <string name="channel_name">Data na barra de status</string>
+    <string name="channel_description">Mantém o dia atual visível na barra de status.</string>
+    <string name="notification_title">DatePin ativo</string>
 </resources>
