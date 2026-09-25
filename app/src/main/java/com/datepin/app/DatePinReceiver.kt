@@ -6,6 +6,17 @@ import android.content.Intent
 
 class DatePinReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
-        DatePinManager.refreshIfEnabled(context)
+        val action = intent?.action ?: return
+
+        when (action) {
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_USER_UNLOCKED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> {
+                DatePinManager.recordSystemEvent(context, action)
+                DatePinManager.refreshIfEnabled(context)
+            }
+        }
     }
 }
