@@ -24,7 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,7 +41,8 @@ class MainActivity : ComponentActivity() {
                 initiallyActive = DatePinManager.isEnabled(this),
                 notificationsAllowed = DatePinManager.notificationsAllowed(this),
                 onEnable = { DatePinManager.setEnabled(this, true) },
-                onDisable = { DatePinManager.setEnabled(this, false) }
+                onDisable = { DatePinManager.setEnabled(this, false) },
+                lastSystemEvent = DatePinManager.lastSystemEvent(this)
             )
         }
     }
@@ -49,7 +53,8 @@ private fun DatePinApp(
     initiallyActive: Boolean,
     notificationsAllowed: Boolean,
     onEnable: () -> Unit,
-    onDisable: () -> Unit
+    onDisable: () -> Unit,
+    lastSystemEvent: Pair<String?, Long>
 ) {
     val today = LocalDate.now()
     var active by remember { mutableStateOf(initiallyActive) }
@@ -111,6 +116,27 @@ private fun DatePinApp(
                     }
                 ) {
                     Text(if (active) "Desativar DatePin" else "Ativar DatePin")
+                }
+
+                val eventName = lastSystemEvent.first
+                val eventTime = lastSystemEvent.second
+
+                if (eventName != null && eventTime > 0L) {
+                    val formatted = Instant.ofEpochMilli(eventTime)
+                        .atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("dd/MM HH:mm:ss"))
+
+                    Text(
+                        text = "Diagnóstico: $eventName às $formatted",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 24.dp)
+                    )
+                } else {
+                    Text(
+                        text = "Diagnóstico: nenhum evento de sistema recebido",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 24.dp)
+                    )
                 }
             }
         }
