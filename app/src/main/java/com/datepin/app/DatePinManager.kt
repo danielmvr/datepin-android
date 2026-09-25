@@ -30,6 +30,7 @@ object DatePinManager {
     private const val KEY_LAST_SYSTEM_EVENT_TIME = "last_system_event_time"
     private const val KEY_LAST_NOTIFICATION_RESULT = "last_notification_result"
     private const val KEY_LAST_NOTIFICATION_TIME = "last_notification_time"
+    private const val KEY_ICON_STYLE = "icon_style"
     private const val BOOT_RETRY_REQUEST_1 = 2710
     private const val BOOT_RETRY_REQUEST_2 = 2711
     private const val CHANNEL_ID = "datepin_status"
@@ -91,6 +92,19 @@ object DatePinManager {
             System.currentTimeMillis() + delayMillis,
             pendingIntent
         )
+    }
+
+    fun iconStyle(context: Context): String =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .getString(KEY_ICON_STYLE, "bold") ?: "bold"
+
+    fun setIconStyle(context: Context, style: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_ICON_STYLE, style)
+            .apply()
+
+        refreshIfEnabled(context)
     }
 
     fun isEnabled(context: Context): Boolean =
@@ -180,7 +194,7 @@ object DatePinManager {
         )
 
         val notification = Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(createDayIcon(today.dayOfMonth))
+            .setSmallIcon(createDayIcon(today.dayOfMonth, iconStyle(context)))
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(fullDate)
             .setContentIntent(contentIntent)
@@ -237,7 +251,7 @@ object DatePinManager {
         }
     }
 
-    private fun createDayIcon(day: Int): Icon {
+    private fun createDayIcon(day: Int, style: String): Icon {
         val size = 96
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
@@ -245,8 +259,24 @@ object DatePinManager {
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textSize = if (day < 10) 74f else 62f
+
+            when (style) {
+                "clean" -> {
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                    textSize = if (day < 10) 70f else 58f
+                    strokeWidth = 0f
+                }
+                "compact" -> {
+                    typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
+                    textSize = if (day < 10) 76f else 66f
+                    strokeWidth = 0f
+                }
+                else -> {
+                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                    textSize = if (day < 10) 74f else 62f
+                    strokeWidth = 0f
+                }
+            }
         }
 
         val baseline = (size / 2f) - ((paint.descent() + paint.ascent()) / 2f)
