@@ -1,17 +1,6 @@
 package com.datepin.app
 
 import android.Manifest
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.content.Context
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
-import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,101 +24,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        createNotificationChannel()
+
+        DatePinManager.createNotificationChannel(this)
+        DatePinManager.refreshIfEnabled(this)
 
         setContent {
             DatePinApp(
-                onEnable = { enableDatePin() },
-                notificationsAllowed = notificationsAllowed()
+                initiallyActive = DatePinManager.isEnabled(this),
+                notificationsAllowed = DatePinManager.notificationsAllowed(this),
+                onEnable = { DatePinManager.setEnabled(this, true) },
+                onDisable = { DatePinManager.setEnabled(this, false) }
             )
         }
-    }
-
-    private fun notificationsAllowed(): Boolean {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun createNotificationChannel() {
-        val manager = getSystemService(NotificationManager::class.java)
-
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.channel_name),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.channel_description)
-            setShowBadge(false)
-            enableVibration(false)
-            setSound(null, null)
-        }
-
-        manager.createNotificationChannel(channel)
-    }
-
-    private fun enableDatePin() {
-        val today = LocalDate.now()
-        val manager = getSystemService(NotificationManager::class.java)
-
-        val fullDate = today.format(
-            DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM 'de' yyyy", Locale("pt", "BR"))
-        ).replaceFirstChar { it.uppercase() }
-
-        val notification = Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(createDayIcon(today.dayOfMonth))
-            .setContentTitle(getString(R.string.notification_title))
-            .setContentText(fullDate)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setShowWhen(false)
-            .setCategory(Notification.CATEGORY_STATUS)
-            .build()
-
-        manager.notify(NOTIFICATION_ID, notification)
-    }
-
-    private fun createDayIcon(day: Int): Icon {
-        val size = 96
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
-
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = Color.WHITE
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textSize = if (day < 10) 74f else 62f
-        }
-
-        val baseline = (size / 2f) - ((paint.descent() + paint.ascent()) / 2f)
-        canvas.drawText(day.toString(), size / 2f, baseline, paint)
-
-        return Icon.createWithBitmap(bitmap)
-    }
-
-    companion object {
-        private const val CHANNEL_ID = "datepin_status"
-        private const val NOTIFICATION_ID = 2509
     }
 }
 
 @Composable
 private fun DatePinApp(
+    initiallyActive: Boolean,
+    notificationsAllowed: Boolean,
     onEnable: () -> Unit,
-    notificationsAllowed: Boolean
+    onDisable: () -> Unit
 ) {
     val today = LocalDate.now()
-    var active by remember { mutableStateOf(false) }
+    var active by remember { mutableStateOf(initiallyActive) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -173,7 +96,13 @@ private fun DatePinApp(
 
                 Button(
                     onClick = {
-                        if (notificationsAllowed || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                        if (active) {
+                            onDisable()
+                            active = false
+                        } else if (
+                            notificationsAllowed ||
+                            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                        ) {
                             onEnable()
                             active = true
                         } else {
@@ -181,7 +110,7 @@ private fun DatePinApp(
                         }
                     }
                 ) {
-                    Text(if (active) "DatePin ativo" else "Ativar DatePin")
+                    Text(if (active) "Desativar DatePin" else "Ativar DatePin")
                 }
             }
         }
