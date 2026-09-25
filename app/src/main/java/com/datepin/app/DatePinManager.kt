@@ -28,6 +28,10 @@ object DatePinManager {
     private const val KEY_ENABLED = "enabled"
     private const val KEY_LAST_SYSTEM_EVENT = "last_system_event"
     private const val KEY_LAST_SYSTEM_EVENT_TIME = "last_system_event_time"
+    private const val KEY_LAST_NOTIFICATION_RESULT = "last_notification_result"
+    private const val KEY_LAST_NOTIFICATION_TIME = "last_notification_time"
+    private const val BOOT_RETRY_REQUEST_1 = 2710
+    private const val BOOT_RETRY_REQUEST_2 = 2711
     private const val CHANNEL_ID = "datepin_status"
     private const val NOTIFICATION_ID = 2509
     private const val MIDNIGHT_REQUEST_CODE = 2609
@@ -44,6 +48,49 @@ object DatePinManager {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return prefs.getString(KEY_LAST_SYSTEM_EVENT, null) to
             prefs.getLong(KEY_LAST_SYSTEM_EVENT_TIME, 0L)
+    }
+
+    fun recordNotificationResult(context: Context, result: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_LAST_NOTIFICATION_RESULT, result)
+            .putLong(KEY_LAST_NOTIFICATION_TIME, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun lastNotificationResult(context: Context): Pair<String?, Long> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_LAST_NOTIFICATION_RESULT, null) to
+            prefs.getLong(KEY_LAST_NOTIFICATION_TIME, 0L)
+    }
+
+    fun scheduleBootRetries(context: Context) {
+        scheduleBootRetry(context, BOOT_RETRY_REQUEST_1, 15_000L, "BOOT_RETRY_15S")
+        scheduleBootRetry(context, BOOT_RETRY_REQUEST_2, 45_000L, "BOOT_RETRY_45S")
+    }
+
+    private fun scheduleBootRetry(
+        context: Context,
+        requestCode: Int,
+        delayMillis: Long,
+        label: String
+    ) {
+        val alarmManager = context.getSystemService(AlarmManager::class.java)
+        val intent = Intent(context, BootRetryReceiver::class.java)
+            .putExtra("retry_label", label)
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            System.currentTimeMillis() + delayMillis,
+            pendingIntent
+        )
     }
 
     fun isEnabled(context: Context): Boolean =
@@ -74,9 +121,26 @@ object DatePinManager {
     }
 
     fun refreshIfEnabled(context: Context) {
-        if (!isEnabled(context) || !notificationsAllowed(context)) return
-        showNotification(context)
-        scheduleNextUpdate(context)
+        if (!isEnabled(context)) {
+            recordNotificationResult(context, "IGNORED_DISABLED")
+            return
+        }
+
+        if (!notificationsAllowed(context)) {
+            recordNotificationResult(context, "BLOCKED_NO_PERMISSION")
+            return
+        }
+
+        try {
+            showNotification(context)
+            recordNotificationResult(context, "POSTED_OK")
+            scheduleNextUpdate(context)
+        } catch (t: Throwable) {
+            recordNotificationResult(
+                context,
+                "ERROR_${t::class.java.simpleName}: ${t.message ?: "sem mensagem"}"
+            )
+        }
     }
 
     fun createNotificationChannel(context: Context) {
