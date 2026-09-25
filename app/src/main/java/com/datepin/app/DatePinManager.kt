@@ -26,9 +26,25 @@ import java.util.Locale
 object DatePinManager {
     private const val PREFS = "datepin_prefs"
     private const val KEY_ENABLED = "enabled"
+    private const val KEY_LAST_SYSTEM_EVENT = "last_system_event"
+    private const val KEY_LAST_SYSTEM_EVENT_TIME = "last_system_event_time"
     private const val CHANNEL_ID = "datepin_status"
     private const val NOTIFICATION_ID = 2509
     private const val MIDNIGHT_REQUEST_CODE = 2609
+
+    fun recordSystemEvent(context: Context, action: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(KEY_LAST_SYSTEM_EVENT, action.substringAfterLast('.'))
+            .putLong(KEY_LAST_SYSTEM_EVENT_TIME, System.currentTimeMillis())
+            .apply()
+    }
+
+    fun lastSystemEvent(context: Context): Pair<String?, Long> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return prefs.getString(KEY_LAST_SYSTEM_EVENT, null) to
+            prefs.getLong(KEY_LAST_SYSTEM_EVENT_TIME, 0L)
+    }
 
     fun isEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
