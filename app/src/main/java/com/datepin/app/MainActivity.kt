@@ -42,7 +42,8 @@ class MainActivity : ComponentActivity() {
                 notificationsAllowed = DatePinManager.notificationsAllowed(this),
                 onEnable = { DatePinManager.setEnabled(this, true) },
                 onDisable = { DatePinManager.setEnabled(this, false) },
-                lastSystemEvent = DatePinManager.lastSystemEvent(this)
+                lastSystemEvent = DatePinManager.lastSystemEvent(this),
+                lastNotificationResult = DatePinManager.lastNotificationResult(this)
             )
         }
     }
@@ -54,7 +55,8 @@ private fun DatePinApp(
     notificationsAllowed: Boolean,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
-    lastSystemEvent: Pair<String?, Long>
+    lastSystemEvent: Pair<String?, Long>,
+    lastNotificationResult: Pair<String?, Long>
 ) {
     val today = LocalDate.now()
     var active by remember { mutableStateOf(initiallyActive) }
@@ -127,15 +129,30 @@ private fun DatePinApp(
                         .format(DateTimeFormatter.ofPattern("dd/MM HH:mm:ss"))
 
                     Text(
-                        text = "Diagnóstico: $eventName às $formatted",
+                        text = "Evento: $eventName às $formatted",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 24.dp)
                     )
                 } else {
                     Text(
-                        text = "Diagnóstico: nenhum evento de sistema recebido",
+                        text = "Evento: nenhum evento de sistema recebido",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 24.dp)
+                    )
+                }
+
+                val notificationName = lastNotificationResult.first
+                val notificationTime = lastNotificationResult.second
+
+                if (notificationName != null && notificationTime > 0L) {
+                    val formattedNotification = Instant.ofEpochMilli(notificationTime)
+                        .atZone(ZoneId.systemDefault())
+                        .format(DateTimeFormatter.ofPattern("dd/MM HH:mm:ss"))
+
+                    Text(
+                        text = "Notificação: $notificationName às $formattedNotification",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
                 }
             }
