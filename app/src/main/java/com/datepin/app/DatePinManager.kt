@@ -184,14 +184,13 @@ object DatePinManager {
                 .withLocale(Locale.getDefault())
         ).replaceFirstChar { it.uppercase() }
 
-        val pinnedTarget = EventManager.pinnedTarget(context)
-        val pinnedEvent = EventManager.getEvent(context)
+        val pinnedEvent = EventManager.getPinnedEvent(context)
 
         val iconText: String
         val notificationTitle: String
         val notificationBody: String
 
-        if (pinnedTarget == EventManager.PIN_EVENT && pinnedEvent != null) {
+        if (pinnedEvent != null) {
             iconText = EventManager.iconTextForEvent(pinnedEvent)
             notificationTitle = pinnedEvent.name
             notificationBody = EventManager.eventDescription(context, pinnedEvent)
