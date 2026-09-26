@@ -66,17 +66,17 @@ class MainActivity : ComponentActivity() {
             DatePinScreen(
                 initiallyActive = DatePinManager.isEnabled(this),
                 initialStyle = DatePinManager.iconStyle(this),
-                initialEvent = EventManager.getEvent(this),
-                initialPinnedTarget = EventManager.pinnedTarget(this),
+                initialEvents = EventManager.getEvents(this),
+                initialPinnedEventId = EventManager.pinnedEventId(this),
                 premiumUnlocked = PremiumManager.isPremium(this),
                 notificationsAllowed = DatePinManager.notificationsAllowed(this),
                 onEnable = { DatePinManager.setEnabled(this, true) },
                 onDisable = { DatePinManager.setEnabled(this, false) },
                 onStyleChange = { DatePinManager.setIconStyle(this, it) },
                 onSaveEvent = { EventManager.saveEvent(this, it) },
-                onDeleteEvent = { EventManager.deleteEvent(this) },
-                onPinToday = { EventManager.setPinnedTarget(this, EventManager.PIN_TODAY) },
-                onPinEvent = { EventManager.setPinnedTarget(this, EventManager.PIN_EVENT) }
+                onDeleteEvent = { EventManager.deleteEvent(this, it) },
+                onPinToday = { EventManager.setPinnedToday(this) },
+                onPinEvent = { EventManager.setPinnedEvent(this, it) }
             )
         }
     }
@@ -86,24 +86,27 @@ class MainActivity : ComponentActivity() {
 private fun DatePinScreen(
     initiallyActive: Boolean,
     initialStyle: String,
-    initialEvent: DatePinEvent?,
-    initialPinnedTarget: String,
+    initialEvents: List<DatePinEvent>,
+    initialPinnedEventId: String?,
     premiumUnlocked: Boolean,
     notificationsAllowed: Boolean,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
     onStyleChange: (String) -> Unit,
-    onSaveEvent: (DatePinEvent) -> Unit,
-    onDeleteEvent: () -> Unit,
+    onSaveEvent: (DatePinEvent) -> Boolean,
+    onDeleteEvent: (String) -> Unit,
     onPinToday: () -> Unit,
-    onPinEvent: () -> Unit
+    onPinEvent: (String) -> Unit
 ) {
+    val context = LocalContext.current
     val today = LocalDate.now()
+
     var active by remember { mutableStateOf(initiallyActive) }
     var selectedStyle by remember { mutableStateOf(initialStyle) }
-    var savedEvent by remember { mutableStateOf(initialEvent) }
-    var pinnedTarget by remember { mutableStateOf(initialPinnedTarget) }
+    var events by remember { mutableStateOf(initialEvents) }
+    var pinnedEventId by remember { mutableStateOf(initialPinnedEventId) }
     var showEventForm by remember { mutableStateOf(false) }
+    var editingEvent by remember { mutableStateOf<DatePinEvent?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -114,12 +117,13 @@ private fun DatePinScreen(
         }
     }
 
-    val pinnedEvent = savedEvent.takeIf { pinnedTarget == EventManager.PIN_EVENT }
+    val pinnedEvent = events.firstOrNull { it.id == pinnedEventId }
+
     val pinnedTitle = pinnedEvent?.name ?: stringResource(R.string.today_label)
     val pinnedValue = pinnedEvent?.let { EventManager.eventValue(it).toString() }
         ?: today.dayOfMonth.toString()
     val pinnedDescription = pinnedEvent?.let {
-        EventManager.eventDescription(LocalContext.current, it)
+        EventManager.eventDescription(context, it)
     } ?: today.format(
         DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
             .withLocale(Locale.getDefault())
@@ -192,69 +196,111 @@ private fun DatePinScreen(
                 )
 
                 TodayItem(
-                    isPinned = pinnedTarget == EventManager.PIN_TODAY,
+                    isPinned = pinnedEventId == null,
                     onPin = {
                         onPinToday()
-                        pinnedTarget = EventManager.PIN_TODAY
+                        pinnedEventId = null
                     }
                 )
 
-                savedEvent?.let { event ->
+                events.forEach { event ->
                     Spacer(modifier = Modifier.height(10.dp))
+
                     EventItem(
                         event = event,
-                        isPinned = pinnedTarget == EventManager.PIN_EVENT,
+                        isPinned = pinnedEventId == event.id,
                         onPin = {
-                            onPinEvent()
-                            pinnedTarget = EventManager.PIN_EVENT
+                            onPinEvent(event.id)
+                            pinnedEventId = event.id
                         },
-                        onEdit = { showEventForm = true },
+                        onEdit = {
+                            editingEvent = event
+                            showEventForm = true
+                        },
                         onDelete = {
-                            onDeleteEvent()
-                            savedEvent = null
-                            pinnedTarget = EventManager.PIN_TODAY
-                            showEventForm = false
+                            onDeleteEvent(event.id)
+                            events = events.filterNot { it.id == event.id }
+
+                            if (pinnedEventId == event.id) {
+                                pinnedEventId = null
+                            }
+
+                            if (editingEvent?.id == event.id) {
+                                editingEvent = null
+                                showEventForm = false
+                            }
                         }
                     )
                 }
 
-                if (savedEvent == null && !showEventForm) {
+                val canCreateAnother = premiumUnlocked || events.isEmpty()
+
+                if (!showEventForm) {
                     OutlinedButton(
-                        onClick = { showEventForm = true },
+                        onClick = {
+                            if (canCreateAnother) {
+                                editingEvent = null
+                                showEventForm = true
+                            }
+                        },
+                        enabled = canCreateAnother,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 12.dp),
                         shape = RoundedCornerShape(16.dp)
                     ) {
-                        Text(stringResource(R.string.new_date))
+                        Text(
+                            if (canCreateAnother) {
+                                stringResource(R.string.new_date)
+                            } else {
+                                stringResource(R.string.new_date_premium)
+                            }
+                        )
                     }
-
-                    Text(
-                        text = stringResource(R.string.free_event_limit),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
                 }
 
                 if (showEventForm) {
                     Spacer(modifier = Modifier.height(14.dp))
+
                     EventEditor(
-                        existing = savedEvent,
-                        onCancel = { showEventForm = false },
-                        onSave = { event ->
-                            onSaveEvent(event)
-                            savedEvent = event
-                            pinnedTarget = EventManager.PIN_EVENT
+                        existing = editingEvent,
+                        onCancel = {
+                            editingEvent = null
                             showEventForm = false
+                        },
+                        onSave = { event ->
+                            val saved = onSaveEvent(event)
+
+                            if (saved) {
+                                val currentIndex = events.indexOfFirst { it.id == event.id }
+
+                                events = if (currentIndex >= 0) {
+                                    events.toMutableList().also {
+                                        it[currentIndex] = event
+                                    }
+                                } else {
+                                    events + event
+                                }
+
+                                pinnedEventId = event.id
+                                editingEvent = null
+                                showEventForm = false
+                            }
+
+                            saved
                         }
                     )
-                } else if (savedEvent != null) {
-                    Text(
-                        text = stringResource(R.string.free_event_limit),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(top = 10.dp)
-                    )
                 }
+
+                Text(
+                    text = if (premiumUnlocked) {
+                        stringResource(R.string.premium_events_active)
+                    } else {
+                        stringResource(R.string.free_event_limit)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
 
                 Spacer(modifier = Modifier.height(30.dp))
 
@@ -515,17 +561,17 @@ private fun EventItem(
 private fun EventEditor(
     existing: DatePinEvent?,
     onCancel: () -> Unit,
-    onSave: (DatePinEvent) -> Unit
+    onSave: (DatePinEvent) -> Boolean
 ) {
     val context = LocalContext.current
     val today = LocalDate.now()
 
-    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
-    var selectedDate by remember(existing) { mutableStateOf(existing?.date) }
-    var mode by remember(existing) {
+    var name by remember(existing?.id) { mutableStateOf(existing?.name ?: "") }
+    var selectedDate by remember(existing?.id) { mutableStateOf(existing?.date) }
+    var mode by remember(existing?.id) {
         mutableStateOf(existing?.mode ?: EventManager.MODE_COUNTDOWN)
     }
-    var validationError by remember { mutableStateOf<Int?>(null) }
+    var validationError by remember(existing?.id) { mutableStateOf<Int?>(null) }
 
     val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .withLocale(Locale.getDefault())
@@ -555,6 +601,7 @@ private fun EventEditor(
             OutlinedButton(
                 onClick = {
                     val start = selectedDate ?: today
+
                     DatePickerDialog(
                         context,
                         { _, year, month, dayOfMonth ->
@@ -629,13 +676,23 @@ private fun EventEditor(
                     }
 
                     if (validationError == null && date != null) {
-                        onSave(
+                        val event = if (existing == null) {
                             DatePinEvent(
                                 name = name.trim(),
                                 date = date,
                                 mode = mode
                             )
-                        )
+                        } else {
+                            existing.copy(
+                                name = name.trim(),
+                                date = date,
+                                mode = mode
+                            )
+                        }
+
+                        if (!onSave(event)) {
+                            validationError = R.string.free_event_limit
+                        }
                     }
                 },
                 modifier = Modifier
