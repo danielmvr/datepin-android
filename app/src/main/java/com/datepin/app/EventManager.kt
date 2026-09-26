@@ -95,7 +95,11 @@ object EventManager {
 
     fun iconTextForEvent(event: DatePinEvent): String {
         val days = eventValue(event)
-        return if (days > 99) "99+" else days.toString()
+        return when {
+            days <= 999 -> days.toString()
+            days < 10_000 -> "${days / 1000}k+"
+            else -> "10k+"
+        }
     }
 
     fun eventDescription(context: Context, event: DatePinEvent): String {
