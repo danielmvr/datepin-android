@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 object DatePinManager {
@@ -179,11 +180,26 @@ object DatePinManager {
         val manager = context.getSystemService(NotificationManager::class.java)
 
         val fullDate = today.format(
-            DateTimeFormatter.ofPattern(
-                "EEEE, d 'de' MMMM 'de' yyyy",
-                Locale("pt", "BR")
-            )
+            DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+                .withLocale(Locale.getDefault())
         ).replaceFirstChar { it.uppercase() }
+
+        val pinnedTarget = EventManager.pinnedTarget(context)
+        val pinnedEvent = EventManager.getEvent(context)
+
+        val iconText: String
+        val notificationTitle: String
+        val notificationBody: String
+
+        if (pinnedTarget == EventManager.PIN_EVENT && pinnedEvent != null) {
+            iconText = EventManager.iconTextForEvent(pinnedEvent)
+            notificationTitle = pinnedEvent.name
+            notificationBody = EventManager.eventDescription(context, pinnedEvent)
+        } else {
+            iconText = today.dayOfMonth.toString()
+            notificationTitle = context.getString(R.string.notification_title)
+            notificationBody = fullDate
+        }
 
         val launchIntent = Intent(context, MainActivity::class.java)
         val contentIntent = PendingIntent.getActivity(
@@ -194,9 +210,9 @@ object DatePinManager {
         )
 
         val notification = Notification.Builder(context, CHANNEL_ID)
-            .setSmallIcon(createDayIcon(today.dayOfMonth, iconStyle(context)))
-            .setContentTitle(context.getString(R.string.notification_title))
-            .setContentText(fullDate)
+            .setSmallIcon(createNumberIcon(iconText, iconStyle(context)))
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationBody)
             .setContentIntent(contentIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -251,36 +267,35 @@ object DatePinManager {
         }
     }
 
-    private fun createDayIcon(day: Int, style: String): Icon {
+    private fun createNumberIcon(text: String, style: String): Icon {
         val size = 96
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
+        val length = text.length
+        val baseSize = when (length) {
+            1 -> 74f
+            2 -> 62f
+            else -> 44f
+        }
+
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-
-            when (style) {
-                "clean" -> {
-                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-                    textSize = if (day < 10) 70f else 58f
-                    strokeWidth = 0f
-                }
-                "compact" -> {
-                    typeface = Typeface.create("sans-serif-condensed", Typeface.BOLD)
-                    textSize = if (day < 10) 76f else 66f
-                    strokeWidth = 0f
-                }
-                else -> {
-                    typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-                    textSize = if (day < 10) 74f else 62f
-                    strokeWidth = 0f
-                }
+            typeface = when (style) {
+                "clean" -> Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                "compact" -> Typeface.create("sans-serif-condensed", Typeface.BOLD)
+                else -> Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            }
+            textSize = when (style) {
+                "clean" -> baseSize - 4f
+                "compact" -> baseSize + 4f
+                else -> baseSize
             }
         }
 
         val baseline = (size / 2f) - ((paint.descent() + paint.ascent()) / 2f)
-        canvas.drawText(day.toString(), size / 2f, baseline, paint)
+        canvas.drawText(text, size / 2f, baseline, paint)
 
         return Icon.createWithBitmap(bitmap)
     }
