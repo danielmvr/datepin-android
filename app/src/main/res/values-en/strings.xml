@@ -76,4 +76,6 @@
     <string name="edit">Edit</string>
     <string name="countdown_date_invalid">For “Days left”, choose today or a future date.</string>
     <string name="since_date_invalid">For “Days since”, choose today or a past date.</string>
+    <string name="new_date_premium">🔒 New date • Premium</string>
+    <string name="premium_events_active">Premium active: unlimited custom dates.</string>
 </resources>
