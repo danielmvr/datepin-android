@@ -73,4 +73,7 @@
     <string name="free_item_midnight">Updates automatically at midnight</string>
     <string name="free_item_styles">3 included styles</string>
     <string name="privacy_line">No ads • No account • Works offline</string>
+    <string name="edit">Edit</string>
+    <string name="countdown_date_invalid">For “Days left”, choose today or a future date.</string>
+    <string name="since_date_invalid">For “Days since”, choose today or a past date.</string>
 </resources>
