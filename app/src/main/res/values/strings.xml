@@ -19,6 +19,29 @@
     <string name="style_bold">Negrito</string>
     <string name="style_clean">Limpo</string>
     <string name="style_compact">Compacto</string>
-    <string name="style_free">Grátis</string>
+
+    <string name="premium_title">DatePin Premium</string>
+    <string name="premium_subtitle">Mais personalização. Compra única. Sem assinatura.</string>
+    <string name="premium_badge">PREMIUM</string>
+    <string name="premium_lifetime">Vitalício</string>
+    <string name="premium_launch_price">Preço planejado de lançamento: R$ 7,90</string>
+    <string name="premium_normal_price">Depois: R$ 12,90</string>
+    <string name="premium_not_for_sale">Pagamento ainda não ativado nesta versão de teste.</string>
+    <string name="premium_feature_styles">Mais estilos visuais</string>
+    <string name="premium_feature_week">Número da semana</string>
+    <string name="premium_feature_year_day">Dia do ano</string>
+    <string name="premium_feature_formats">Formatos personalizados</string>
+    <string name="premium_feature_widgets">Widgets extras</string>
+    <string name="premium_feature_presets">Presets rápidos</string>
+    <string name="premium_preview_title">Prévia Premium</string>
+    <string name="premium_preview_desc">Estes recursos estão preparados para a versão paga, mas ainda não há cobrança.</string>
+    <string name="premium_locked">Bloqueado</string>
+    <string name="premium_unlocked">Premium ativo</string>
+
+    <string name="free_title">Grátis para sempre</string>
+    <string name="free_item_day">Dia atual na barra</string>
+    <string name="free_item_boot">Volta após reiniciar</string>
+    <string name="free_item_midnight">Atualiza sozinho à meia-noite</string>
+    <string name="free_item_styles">3 estilos incluídos</string>
     <string name="privacy_line">Sem anúncios • Sem conta • Funciona offline</string>
 </resources>
