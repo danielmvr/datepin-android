@@ -264,6 +264,7 @@ private fun DatePinScreen(
 
                     EventEditor(
                         existing = editingEvent,
+                        premiumUnlocked = premiumUnlocked,
                         onCancel = {
                             editingEvent = null
                             showEventForm = false
@@ -526,6 +527,21 @@ private fun EventItem(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 2.dp)
                     )
+
+                    if (event.recurrence != EventManager.RECURRENCE_NONE) {
+                        Text(
+                            text = when (event.recurrence) {
+                                EventManager.RECURRENCE_ANNUAL ->
+                                    stringResource(R.string.recurrence_badge_annual)
+                                EventManager.RECURRENCE_MONTHLY ->
+                                    stringResource(R.string.recurrence_badge_monthly)
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
                 }
 
                 TextButton(
@@ -560,6 +576,7 @@ private fun EventItem(
 @Composable
 private fun EventEditor(
     existing: DatePinEvent?,
+    premiumUnlocked: Boolean,
     onCancel: () -> Unit,
     onSave: (DatePinEvent) -> Boolean
 ) {
@@ -570,6 +587,9 @@ private fun EventEditor(
     var selectedDate by remember(existing?.id) { mutableStateOf(existing?.date) }
     var mode by remember(existing?.id) {
         mutableStateOf(existing?.mode ?: EventManager.MODE_COUNTDOWN)
+    }
+    var recurrence by remember(existing?.id) {
+        mutableStateOf(existing?.recurrence ?: EventManager.RECURRENCE_NONE)
     }
     var validationError by remember(existing?.id) { mutableStateOf<Int?>(null) }
 
@@ -652,6 +672,61 @@ private fun EventEditor(
                 }
             }
 
+            Text(
+                text = stringResource(R.string.recurrence_label),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ModeChoice(
+                    label = stringResource(R.string.recurrence_none),
+                    selected = recurrence == EventManager.RECURRENCE_NONE,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    recurrence = EventManager.RECURRENCE_NONE
+                    validationError = null
+                }
+
+                ModeChoice(
+                    label = if (premiumUnlocked) {
+                        stringResource(R.string.recurrence_annual)
+                    } else {
+                        stringResource(R.string.recurrence_annual_locked)
+                    },
+                    selected = recurrence == EventManager.RECURRENCE_ANNUAL,
+                    enabled = premiumUnlocked,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    recurrence = EventManager.RECURRENCE_ANNUAL
+                    validationError = null
+                }
+
+                ModeChoice(
+                    label = if (premiumUnlocked) {
+                        stringResource(R.string.recurrence_monthly)
+                    } else {
+                        stringResource(R.string.recurrence_monthly_locked)
+                    },
+                    selected = recurrence == EventManager.RECURRENCE_MONTHLY,
+                    enabled = premiumUnlocked,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    recurrence = EventManager.RECURRENCE_MONTHLY
+                    validationError = null
+                }
+            }
+
+            if (recurrence != EventManager.RECURRENCE_NONE) {
+                Text(
+                    text = stringResource(R.string.recurrence_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             validationError?.let { errorRes ->
                 Text(
                     text = stringResource(errorRes),
@@ -668,9 +743,13 @@ private fun EventEditor(
                     validationError = when {
                         name.isBlank() -> R.string.name_required
                         date == null -> R.string.date_required
-                        mode == EventManager.MODE_COUNTDOWN && date.isBefore(today) ->
+                        recurrence == EventManager.RECURRENCE_NONE &&
+                            mode == EventManager.MODE_COUNTDOWN &&
+                            date.isBefore(today) ->
                             R.string.countdown_date_invalid
-                        mode == EventManager.MODE_SINCE && date.isAfter(today) ->
+                        recurrence == EventManager.RECURRENCE_NONE &&
+                            mode == EventManager.MODE_SINCE &&
+                            date.isAfter(today) ->
                             R.string.since_date_invalid
                         else -> null
                     }
@@ -680,13 +759,15 @@ private fun EventEditor(
                             DatePinEvent(
                                 name = name.trim(),
                                 date = date,
-                                mode = mode
+                                mode = mode,
+                                recurrence = recurrence
                             )
                         } else {
                             existing.copy(
                                 name = name.trim(),
                                 date = date,
-                                mode = mode
+                                mode = mode,
+                                recurrence = recurrence
                             )
                         }
 
@@ -718,6 +799,7 @@ private fun ModeChoice(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     val shape = RoundedCornerShape(14.dp)
@@ -731,7 +813,7 @@ private fun ModeChoice(
         modifier = modifier
             .clip(shape)
             .border(border, shape)
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 12.dp, horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
@@ -739,6 +821,11 @@ private fun ModeChoice(
             text = label,
             style = MaterialTheme.typography.labelLarge,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            color = if (enabled) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            },
             textAlign = TextAlign.Center
         )
     }
