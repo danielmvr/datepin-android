@@ -1,45 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DatePin</string>
-    <string name="channel_name">Data na barra de status</string>
-    <string name="channel_description">Mantém o dia atual visível na barra de status.</string>
-    <string name="notification_title">DatePin ativo</string>
+    <string name="channel_name">DatePin na barra de status</string>
+    <string name="channel_description">Mantém uma data ou contador visível na barra de status.</string>
+    <string name="notification_title">Hoje</string>
 
-    <string name="hero_title">Sua data, sempre à vista.</string>
-    <string name="hero_subtitle">Mostre o dia atual na barra de status sem anúncios e sem cadastro.</string>
+    <string name="hero_title">Fixe o tempo que importa.</string>
+    <string name="hero_subtitle">Veja o dia atual ou conte quanto falta para uma data importante, direto na barra de status.</string>
     <string name="status_active">DatePin está ativo</string>
     <string name="status_inactive">DatePin está desativado</string>
-    <string name="status_active_desc">O dia atual permanece visível na barra de status.</string>
-    <string name="status_inactive_desc">Ative para fixar o dia atual na barra de status.</string>
+    <string name="status_active_desc">O item fixado permanece visível na barra de status.</string>
+    <string name="status_inactive_desc">Ative para mostrar o item fixado na barra de status.</string>
     <string name="activate">Ativar DatePin</string>
     <string name="deactivate">Desativar DatePin</string>
+    <string name="pinned_now">Fixado agora</string>
     <string name="today_label">Hoje</string>
+    <string name="pin">Fixar</string>
+    <string name="pinned">FIXADO</string>
+
+    <string name="dates_title">Minhas datas</string>
+    <string name="dates_subtitle">Escolha qual número fica na barra de status.</string>
+    <string name="today_item_desc">Dia atual</string>
+    <string name="new_date">+ Nova data</string>
+    <string name="event_name_label">Nome da data</string>
+    <string name="event_name_hint">Ex.: Férias, aniversário, prova</string>
+    <string name="event_date_label">Escolher data</string>
+    <string name="event_mode_label">Tipo de contador</string>
+    <string name="mode_countdown">Faltam</string>
+    <string name="mode_since">Desde</string>
+    <string name="save_event">Salvar e fixar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="delete">Excluir</string>
+    <string name="free_event_limit">A versão grátis inclui 1 data personalizada.</string>
+    <string name="name_required">Digite um nome para a data.</string>
+    <string name="date_required">Escolha uma data.</string>
+    <string name="event_is_today">É hoje • %1$s</string>
+    <string name="started_today">Começou hoje • %1$s</string>
+
+    <plurals name="days_left">
+        <item quantity="one">Falta %1$d dia • %2$s</item>
+        <item quantity="other">Faltam %1$d dias • %2$s</item>
+    </plurals>
+
+    <plurals name="days_since">
+        <item quantity="one">Há %1$d dia • %2$s</item>
+        <item quantity="other">Há %1$d dias • %2$s</item>
+    </plurals>
+
     <string name="appearance_title">Aparência do número</string>
-    <string name="appearance_subtitle">Escolha como o dia aparece na barra.</string>
+    <string name="appearance_subtitle">Escolha como o número aparece na barra.</string>
     <string name="style_bold">Negrito</string>
     <string name="style_clean">Limpo</string>
     <string name="style_compact">Compacto</string>
 
     <string name="premium_title">DatePin Premium</string>
-    <string name="premium_subtitle">Mais personalização. Compra única. Sem assinatura.</string>
+    <string name="premium_subtitle">Mais datas e mais liberdade. Compra única. Sem assinatura.</string>
     <string name="premium_badge">PREMIUM</string>
-    <string name="premium_lifetime">Vitalício</string>
     <string name="premium_launch_price">Preço planejado de lançamento: R$ 7,90</string>
     <string name="premium_normal_price">Depois: R$ 12,90</string>
     <string name="premium_not_for_sale">Pagamento ainda não ativado nesta versão de teste.</string>
+    <string name="premium_feature_events">Datas e contadores ilimitados</string>
+    <string name="premium_feature_recurring">Eventos recorrentes</string>
+    <string name="premium_feature_rotation">Rotação automática de itens</string>
     <string name="premium_feature_styles">Mais estilos visuais</string>
-    <string name="premium_feature_week">Número da semana</string>
-    <string name="premium_feature_year_day">Dia do ano</string>
-    <string name="premium_feature_formats">Formatos personalizados</string>
     <string name="premium_feature_widgets">Widgets extras</string>
-    <string name="premium_feature_presets">Presets rápidos</string>
-    <string name="premium_preview_title">Prévia Premium</string>
-    <string name="premium_preview_desc">Estes recursos estão preparados para a versão paga, mas ainda não há cobrança.</string>
-    <string name="premium_locked">Bloqueado</string>
-    <string name="premium_unlocked">Premium ativo</string>
+    <string name="premium_feature_formats">Formatos personalizados</string>
 
     <string name="free_title">Grátis para sempre</string>
     <string name="free_item_day">Dia atual na barra</string>
+    <string name="free_item_event">1 contador personalizado</string>
     <string name="free_item_boot">Volta após reiniciar</string>
     <string name="free_item_midnight">Atualiza sozinho à meia-noite</string>
     <string name="free_item_styles">3 estilos incluídos</string>
