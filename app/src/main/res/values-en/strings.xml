@@ -19,6 +19,29 @@
     <string name="style_bold">Bold</string>
     <string name="style_clean">Clean</string>
     <string name="style_compact">Compact</string>
-    <string name="style_free">Free</string>
+
+    <string name="premium_title">DatePin Premium</string>
+    <string name="premium_subtitle">More personalization. One-time purchase. No subscription.</string>
+    <string name="premium_badge">PREMIUM</string>
+    <string name="premium_lifetime">Lifetime</string>
+    <string name="premium_launch_price">Planned launch price: R$ 7.90</string>
+    <string name="premium_normal_price">Then: R$ 12.90</string>
+    <string name="premium_not_for_sale">Payments are not enabled in this test version yet.</string>
+    <string name="premium_feature_styles">More visual styles</string>
+    <string name="premium_feature_week">Week number</string>
+    <string name="premium_feature_year_day">Day of year</string>
+    <string name="premium_feature_formats">Custom formats</string>
+    <string name="premium_feature_widgets">Extra widgets</string>
+    <string name="premium_feature_presets">Quick presets</string>
+    <string name="premium_preview_title">Premium preview</string>
+    <string name="premium_preview_desc">These features are prepared for the paid version, but billing is not enabled yet.</string>
+    <string name="premium_locked">Locked</string>
+    <string name="premium_unlocked">Premium active</string>
+
+    <string name="free_title">Free forever</string>
+    <string name="free_item_day">Current day in status bar</string>
+    <string name="free_item_boot">Returns after reboot</string>
+    <string name="free_item_midnight">Updates automatically at midnight</string>
+    <string name="free_item_styles">3 included styles</string>
     <string name="privacy_line">No ads • No account • Works offline</string>
 </resources>
