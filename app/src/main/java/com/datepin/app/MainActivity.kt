@@ -1,6 +1,7 @@
 package com.datepin.app
 
 import android.Manifest
+import android.app.DatePickerDialog
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -30,8 +31,11 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,12 +44,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,11 +66,17 @@ class MainActivity : ComponentActivity() {
             DatePinScreen(
                 initiallyActive = DatePinManager.isEnabled(this),
                 initialStyle = DatePinManager.iconStyle(this),
+                initialEvent = EventManager.getEvent(this),
+                initialPinnedTarget = EventManager.pinnedTarget(this),
                 premiumUnlocked = PremiumManager.isPremium(this),
                 notificationsAllowed = DatePinManager.notificationsAllowed(this),
                 onEnable = { DatePinManager.setEnabled(this, true) },
                 onDisable = { DatePinManager.setEnabled(this, false) },
-                onStyleChange = { DatePinManager.setIconStyle(this, it) }
+                onStyleChange = { DatePinManager.setIconStyle(this, it) },
+                onSaveEvent = { EventManager.saveEvent(this, it) },
+                onDeleteEvent = { EventManager.deleteEvent(this) },
+                onPinToday = { EventManager.setPinnedTarget(this, EventManager.PIN_TODAY) },
+                onPinEvent = { EventManager.setPinnedTarget(this, EventManager.PIN_EVENT) }
             )
         }
     }
@@ -72,15 +86,24 @@ class MainActivity : ComponentActivity() {
 private fun DatePinScreen(
     initiallyActive: Boolean,
     initialStyle: String,
+    initialEvent: DatePinEvent?,
+    initialPinnedTarget: String,
     premiumUnlocked: Boolean,
     notificationsAllowed: Boolean,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
-    onStyleChange: (String) -> Unit
+    onStyleChange: (String) -> Unit,
+    onSaveEvent: (DatePinEvent) -> Unit,
+    onDeleteEvent: () -> Unit,
+    onPinToday: () -> Unit,
+    onPinEvent: () -> Unit
 ) {
     val today = LocalDate.now()
     var active by remember { mutableStateOf(initiallyActive) }
     var selectedStyle by remember { mutableStateOf(initialStyle) }
+    var savedEvent by remember { mutableStateOf(initialEvent) }
+    var pinnedTarget by remember { mutableStateOf(initialPinnedTarget) }
+    var showEventForm by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -90,6 +113,17 @@ private fun DatePinScreen(
             active = true
         }
     }
+
+    val pinnedEvent = savedEvent.takeIf { pinnedTarget == EventManager.PIN_EVENT }
+    val pinnedTitle = pinnedEvent?.name ?: stringResource(R.string.today_label)
+    val pinnedValue = pinnedEvent?.let { EventManager.eventValue(it).toString() }
+        ?: today.dayOfMonth.toString()
+    val pinnedDescription = pinnedEvent?.let {
+        EventManager.eventDescription(LocalContext.current, it)
+    } ?: today.format(
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
+            .withLocale(Locale.getDefault())
+    ).replaceFirstChar { it.uppercase() }
 
     MaterialTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -105,7 +139,7 @@ private fun DatePinScreen(
                     fontWeight = FontWeight.Bold
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
                     text = stringResource(R.string.hero_title),
@@ -119,12 +153,13 @@ private fun DatePinScreen(
                     modifier = Modifier.padding(top = 10.dp)
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 StatusCard(
-                    day = today.dayOfMonth,
+                    title = pinnedTitle,
+                    value = pinnedValue,
+                    description = pinnedDescription,
                     active = active,
-                    notificationsAllowed = notificationsAllowed,
                     onEnable = {
                         if (
                             notificationsAllowed ||
@@ -143,6 +178,85 @@ private fun DatePinScreen(
                 )
 
                 Spacer(modifier = Modifier.height(28.dp))
+
+                Text(
+                    text = stringResource(R.string.dates_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    text = stringResource(R.string.dates_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 14.dp)
+                )
+
+                TodayItem(
+                    isPinned = pinnedTarget == EventManager.PIN_TODAY,
+                    onPin = {
+                        onPinToday()
+                        pinnedTarget = EventManager.PIN_TODAY
+                    }
+                )
+
+                savedEvent?.let { event ->
+                    Spacer(modifier = Modifier.height(10.dp))
+                    EventItem(
+                        event = event,
+                        isPinned = pinnedTarget == EventManager.PIN_EVENT,
+                        onPin = {
+                            onPinEvent()
+                            pinnedTarget = EventManager.PIN_EVENT
+                        },
+                        onEdit = { showEventForm = true },
+                        onDelete = {
+                            onDeleteEvent()
+                            savedEvent = null
+                            pinnedTarget = EventManager.PIN_TODAY
+                            showEventForm = false
+                        }
+                    )
+                }
+
+                if (savedEvent == null && !showEventForm) {
+                    OutlinedButton(
+                        onClick = { showEventForm = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(stringResource(R.string.new_date))
+                    }
+
+                    Text(
+                        text = stringResource(R.string.free_event_limit),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+
+                if (showEventForm) {
+                    Spacer(modifier = Modifier.height(14.dp))
+                    EventEditor(
+                        existing = savedEvent,
+                        onCancel = { showEventForm = false },
+                        onSave = { event ->
+                            onSaveEvent(event)
+                            savedEvent = event
+                            pinnedTarget = EventManager.PIN_EVENT
+                            showEventForm = false
+                        }
+                    )
+                } else if (savedEvent != null) {
+                    Text(
+                        text = stringResource(R.string.free_event_limit),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 10.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(30.dp))
 
                 Text(
                     text = stringResource(R.string.appearance_title),
@@ -214,9 +328,10 @@ private fun DatePinScreen(
 
 @Composable
 private fun StatusCard(
-    day: Int,
+    title: String,
+    value: String,
+    description: String,
     active: Boolean,
-    notificationsAllowed: Boolean,
     onEnable: () -> Unit,
     onDisable: () -> Unit
 ) {
@@ -234,15 +349,30 @@ private fun StatusCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.today_label),
+                text = stringResource(R.string.pinned_now),
                 style = MaterialTheme.typography.labelLarge
             )
 
             Text(
-                text = day.toString(),
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Text(
+                text = value,
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Bold,
-                lineHeight = 68.sp
+                lineHeight = 68.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
             )
 
             Text(
@@ -251,26 +381,16 @@ private fun StatusCard(
                 } else {
                     stringResource(R.string.status_inactive)
                 },
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Text(
-                text = if (active) {
-                    stringResource(R.string.status_active_desc)
-                } else {
-                    stringResource(R.string.status_inactive_desc)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 6.dp)
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 14.dp)
             )
 
             Button(
                 onClick = if (active) onDisable else onEnable,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 20.dp),
+                    .padding(top = 14.dp),
                 shape = RoundedCornerShape(16.dp),
                 contentPadding = ButtonDefaults.ContentPadding
             ) {
@@ -287,6 +407,287 @@ private fun StatusCard(
 }
 
 @Composable
+private fun TodayItem(
+    isPinned: Boolean,
+    onPin: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.today_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.today_item_desc),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            TextButton(
+                onClick = onPin,
+                enabled = !isPinned
+            ) {
+                Text(
+                    if (isPinned) {
+                        stringResource(R.string.pinned)
+                    } else {
+                        stringResource(R.string.pin)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventItem(
+    event: DatePinEvent,
+    isPinned: Boolean,
+    onPin: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val context = LocalContext.current
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = event.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = EventManager.eventDescription(context, event),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                TextButton(
+                    onClick = onPin,
+                    enabled = !isPinned
+                ) {
+                    Text(
+                        if (isPinned) {
+                            stringResource(R.string.pinned)
+                        } else {
+                            stringResource(R.string.pin)
+                        }
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.padding(top = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                TextButton(onClick = onEdit) {
+                    Text(stringResource(R.string.edit))
+                }
+                TextButton(onClick = onDelete) {
+                    Text(stringResource(R.string.delete))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventEditor(
+    existing: DatePinEvent?,
+    onCancel: () -> Unit,
+    onSave: (DatePinEvent) -> Unit
+) {
+    val context = LocalContext.current
+    val today = LocalDate.now()
+
+    var name by remember(existing) { mutableStateOf(existing?.name ?: "") }
+    var selectedDate by remember(existing) { mutableStateOf(existing?.date) }
+    var mode by remember(existing) {
+        mutableStateOf(existing?.mode ?: EventManager.MODE_COUNTDOWN)
+    }
+    var validationError by remember { mutableStateOf<Int?>(null) }
+
+    val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+        .withLocale(Locale.getDefault())
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            OutlinedTextField(
+                value = name,
+                onValueChange = {
+                    name = it.take(40)
+                    validationError = null
+                },
+                label = { Text(stringResource(R.string.event_name_label)) },
+                placeholder = { Text(stringResource(R.string.event_name_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            OutlinedButton(
+                onClick = {
+                    val start = selectedDate ?: today
+                    DatePickerDialog(
+                        context,
+                        { _, year, month, dayOfMonth ->
+                            selectedDate = LocalDate.of(year, month + 1, dayOfMonth)
+                            validationError = null
+                        },
+                        start.year,
+                        start.monthValue - 1,
+                        start.dayOfMonth
+                    ).show()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(
+                    selectedDate?.format(dateFormatter)
+                        ?: stringResource(R.string.event_date_label)
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.event_mode_label),
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ModeChoice(
+                    label = stringResource(R.string.mode_countdown),
+                    selected = mode == EventManager.MODE_COUNTDOWN,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    mode = EventManager.MODE_COUNTDOWN
+                    validationError = null
+                }
+
+                ModeChoice(
+                    label = stringResource(R.string.mode_since),
+                    selected = mode == EventManager.MODE_SINCE,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    mode = EventManager.MODE_SINCE
+                    validationError = null
+                }
+            }
+
+            validationError?.let { errorRes ->
+                Text(
+                    text = stringResource(errorRes),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+
+            Button(
+                onClick = {
+                    val date = selectedDate
+
+                    validationError = when {
+                        name.isBlank() -> R.string.name_required
+                        date == null -> R.string.date_required
+                        mode == EventManager.MODE_COUNTDOWN && date.isBefore(today) ->
+                            R.string.countdown_date_invalid
+                        mode == EventManager.MODE_SINCE && date.isAfter(today) ->
+                            R.string.since_date_invalid
+                        else -> null
+                    }
+
+                    if (validationError == null && date != null) {
+                        onSave(
+                            DatePinEvent(
+                                name = name.trim(),
+                                date = date,
+                                mode = mode
+                            )
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 14.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text(stringResource(R.string.save_event))
+            }
+
+            TextButton(
+                onClick = onCancel,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            ) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModeChoice(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val shape = RoundedCornerShape(14.dp)
+    val border = if (selected) {
+        BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    }
+
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .border(border, shape)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
 private fun FreeSection() {
     Text(
         text = stringResource(R.string.free_title),
@@ -299,6 +700,7 @@ private fun FreeSection() {
         modifier = Modifier.padding(top = 12.dp)
     ) {
         FeatureLine("✓", stringResource(R.string.free_item_day))
+        FeatureLine("✓", stringResource(R.string.free_item_event))
         FeatureLine("✓", stringResource(R.string.free_item_boot))
         FeatureLine("✓", stringResource(R.string.free_item_midnight))
         FeatureLine("✓", stringResource(R.string.free_item_styles))
@@ -341,12 +743,12 @@ private fun PremiumSection(unlocked: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.padding(top = 16.dp)
             ) {
+                PremiumFeature(stringResource(R.string.premium_feature_events), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_recurring), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_rotation), unlocked)
                 PremiumFeature(stringResource(R.string.premium_feature_styles), unlocked)
-                PremiumFeature(stringResource(R.string.premium_feature_week), unlocked)
-                PremiumFeature(stringResource(R.string.premium_feature_year_day), unlocked)
-                PremiumFeature(stringResource(R.string.premium_feature_formats), unlocked)
                 PremiumFeature(stringResource(R.string.premium_feature_widgets), unlocked)
-                PremiumFeature(stringResource(R.string.premium_feature_presets), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_formats), unlocked)
             }
 
             Text(
