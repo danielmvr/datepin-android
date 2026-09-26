@@ -73,4 +73,7 @@
     <string name="free_item_midnight">Atualiza sozinho à meia-noite</string>
     <string name="free_item_styles">3 estilos incluídos</string>
     <string name="privacy_line">Sem anúncios • Sem conta • Funciona offline</string>
+    <string name="edit">Editar</string>
+    <string name="countdown_date_invalid">Para “Faltam”, escolha hoje ou uma data futura.</string>
+    <string name="since_date_invalid">Para “Desde”, escolha hoje ou uma data passada.</string>
 </resources>
