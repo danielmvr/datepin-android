@@ -30,6 +30,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # Keep all development APKs signed by the same debug certificate.
       - name: Restore stable debug signing key
         uses: actions/cache@v4
         with:
