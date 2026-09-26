@@ -23,6 +23,8 @@ object EventManager {
     const val MODE_SINCE = "since"
 
     const val RECURRENCE_NONE = "none"
+    const val RECURRENCE_ANNUAL = "annual"
+    const val RECURRENCE_MONTHLY = "monthly"
 
     const val PIN_TODAY = "today"
     private const val PIN_EVENT_PREFIX = "event:"
@@ -147,10 +149,37 @@ object EventManager {
         DatePinManager.refreshIfEnabled(context)
     }
 
+    fun effectiveDate(
+        event: DatePinEvent,
+        today: LocalDate = LocalDate.now()
+    ): LocalDate {
+        return when (event.recurrence) {
+            RECURRENCE_ANNUAL -> {
+                if (event.mode == MODE_SINCE) {
+                    previousAnnualOccurrence(event.date, today)
+                } else {
+                    nextAnnualOccurrence(event.date, today)
+                }
+            }
+
+            RECURRENCE_MONTHLY -> {
+                if (event.mode == MODE_SINCE) {
+                    previousMonthlyOccurrence(event.date, today)
+                } else {
+                    nextMonthlyOccurrence(event.date, today)
+                }
+            }
+
+            else -> event.date
+        }
+    }
+
     fun eventValue(event: DatePinEvent, today: LocalDate = LocalDate.now()): Long {
+        val target = effectiveDate(event, today)
+
         return when (event.mode) {
-            MODE_SINCE -> ChronoUnit.DAYS.between(event.date, today).coerceAtLeast(0)
-            else -> ChronoUnit.DAYS.between(today, event.date).coerceAtLeast(0)
+            MODE_SINCE -> ChronoUnit.DAYS.between(target, today).coerceAtLeast(0)
+            else -> ChronoUnit.DAYS.between(today, target).coerceAtLeast(0)
         }
     }
 
@@ -165,7 +194,8 @@ object EventManager {
 
     fun eventDescription(context: Context, event: DatePinEvent): String {
         val days = eventValue(event).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-        val dateText = event.date.format(
+        val displayDate = effectiveDate(event)
+        val dateText = displayDate.format(
             DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
                 .withLocale(Locale.getDefault())
         )
@@ -190,6 +220,50 @@ object EventManager {
             days,
             dateText
         )
+    }
+
+    private fun nextAnnualOccurrence(base: LocalDate, today: LocalDate): LocalDate {
+        var candidate = safeDate(today.year, base.monthValue, base.dayOfMonth)
+        if (candidate.isBefore(today)) {
+            candidate = safeDate(today.year + 1, base.monthValue, base.dayOfMonth)
+        }
+        return candidate
+    }
+
+    private fun previousAnnualOccurrence(base: LocalDate, today: LocalDate): LocalDate {
+        var candidate = safeDate(today.year, base.monthValue, base.dayOfMonth)
+        if (candidate.isAfter(today)) {
+            candidate = safeDate(today.year - 1, base.monthValue, base.dayOfMonth)
+        }
+        return candidate
+    }
+
+    private fun nextMonthlyOccurrence(base: LocalDate, today: LocalDate): LocalDate {
+        var candidate = safeDate(today.year, today.monthValue, base.dayOfMonth)
+        if (candidate.isBefore(today)) {
+            val nextMonth = today.plusMonths(1)
+            candidate = safeDate(nextMonth.year, nextMonth.monthValue, base.dayOfMonth)
+        }
+        return candidate
+    }
+
+    private fun previousMonthlyOccurrence(base: LocalDate, today: LocalDate): LocalDate {
+        var candidate = safeDate(today.year, today.monthValue, base.dayOfMonth)
+        if (candidate.isAfter(today)) {
+            val previousMonth = today.minusMonths(1)
+            candidate = safeDate(
+                previousMonth.year,
+                previousMonth.monthValue,
+                base.dayOfMonth
+            )
+        }
+        return candidate
+    }
+
+    private fun safeDate(year: Int, month: Int, day: Int): LocalDate {
+        val first = LocalDate.of(year, month, 1)
+        val safeDay = day.coerceAtMost(first.lengthOfMonth())
+        return first.withDayOfMonth(safeDay)
     }
 
     private fun eventTarget(eventId: String): String =
