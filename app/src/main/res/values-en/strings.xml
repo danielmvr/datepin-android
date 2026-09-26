@@ -78,4 +78,13 @@
     <string name="since_date_invalid">For “Days since”, choose today or a past date.</string>
     <string name="new_date_premium">🔒 New date • Premium</string>
     <string name="premium_events_active">Premium active: unlimited custom dates.</string>
+    <string name="recurrence_label">Repeat</string>
+    <string name="recurrence_none">Do not repeat</string>
+    <string name="recurrence_annual">Every year</string>
+    <string name="recurrence_monthly">Every month</string>
+    <string name="recurrence_annual_locked">🔒 Every year • Premium</string>
+    <string name="recurrence_monthly_locked">🔒 Every month • Premium</string>
+    <string name="recurrence_hint">DatePin automatically calculates the next or most recent occurrence.</string>
+    <string name="recurrence_badge_annual">↻ YEARLY</string>
+    <string name="recurrence_badge_monthly">↻ MONTHLY</string>
 </resources>
