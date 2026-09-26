@@ -273,10 +273,11 @@ object DatePinManager {
         val canvas = Canvas(bitmap)
 
         val length = text.length
-        val baseSize = when (length) {
+        val startingSize = when (length) {
             1 -> 74f
             2 -> 62f
-            3 -> 48f
+            3 -> 50f
+            4 -> 42f
             else -> 38f
         }
 
@@ -295,11 +296,19 @@ object DatePinManager {
             }
 
             textSize = when {
-                length >= 3 -> baseSize
-                style == "clean" -> baseSize - 4f
-                style == "compact" -> baseSize + 4f
-                else -> baseSize
+                length >= 3 -> startingSize
+                style == "clean" -> startingSize - 4f
+                style == "compact" -> startingSize + 4f
+                else -> startingSize
             }
+        }
+
+        // Keep the text inside one Android status-bar icon.
+        // This lets 1–4 digit counters use as much space as possible
+        // without relying on multiple notification icons.
+        val maxTextWidth = size * 0.90f
+        while (paint.measureText(text) > maxTextWidth && paint.textSize > 24f) {
+            paint.textSize -= 1f
         }
 
         val baseline = (size / 2f) - ((paint.descent() + paint.ascent()) / 2f)
