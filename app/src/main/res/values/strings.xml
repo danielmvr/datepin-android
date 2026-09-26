@@ -76,4 +76,6 @@
     <string name="edit">Editar</string>
     <string name="countdown_date_invalid">Para “Faltam”, escolha hoje ou uma data futura.</string>
     <string name="since_date_invalid">Para “Desde”, escolha hoje ou uma data passada.</string>
+    <string name="new_date_premium">🔒 Nova data • Premium</string>
+    <string name="premium_events_active">Premium ativo: datas personalizadas ilimitadas.</string>
 </resources>
