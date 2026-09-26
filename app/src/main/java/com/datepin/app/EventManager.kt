@@ -116,8 +116,11 @@ object EventManager {
         }
     }
 
+    fun pinnedEventId(context: Context): String? =
+        eventIdFromTarget(pinnedTarget(context))
+
     fun getPinnedEvent(context: Context): DatePinEvent? {
-        val eventId = eventIdFromTarget(pinnedTarget(context)) ?: return null
+        val eventId = pinnedEventId(context) ?: return null
         return getEvents(context).firstOrNull { it.id == eventId }
     }
 
