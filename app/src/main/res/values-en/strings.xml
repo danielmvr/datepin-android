@@ -1,45 +1,74 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">DatePin</string>
-    <string name="channel_name">Date in status bar</string>
-    <string name="channel_description">Keeps the current day visible in the status bar.</string>
-    <string name="notification_title">DatePin is active</string>
+    <string name="channel_name">DatePin in status bar</string>
+    <string name="channel_description">Keeps a date or countdown visible in the status bar.</string>
+    <string name="notification_title">Today</string>
 
-    <string name="hero_title">Your date, always in sight.</string>
-    <string name="hero_subtitle">Show today’s date in the status bar with no ads and no account.</string>
+    <string name="hero_title">Pin the time that matters.</string>
+    <string name="hero_subtitle">See today’s date or count down to an important date, right in your status bar.</string>
     <string name="status_active">DatePin is active</string>
     <string name="status_inactive">DatePin is off</string>
-    <string name="status_active_desc">The current day stays visible in your status bar.</string>
-    <string name="status_inactive_desc">Turn it on to pin today’s date to the status bar.</string>
+    <string name="status_active_desc">Your pinned item stays visible in the status bar.</string>
+    <string name="status_inactive_desc">Turn it on to show your pinned item in the status bar.</string>
     <string name="activate">Turn on DatePin</string>
     <string name="deactivate">Turn off DatePin</string>
+    <string name="pinned_now">Pinned now</string>
     <string name="today_label">Today</string>
+    <string name="pin">Pin</string>
+    <string name="pinned">PINNED</string>
+
+    <string name="dates_title">My dates</string>
+    <string name="dates_subtitle">Choose which number stays in your status bar.</string>
+    <string name="today_item_desc">Current day</string>
+    <string name="new_date">+ New date</string>
+    <string name="event_name_label">Date name</string>
+    <string name="event_name_hint">e.g. Vacation, birthday, exam</string>
+    <string name="event_date_label">Choose date</string>
+    <string name="event_mode_label">Counter type</string>
+    <string name="mode_countdown">Days left</string>
+    <string name="mode_since">Days since</string>
+    <string name="save_event">Save and pin</string>
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="free_event_limit">The free version includes 1 custom date.</string>
+    <string name="name_required">Enter a name for the date.</string>
+    <string name="date_required">Choose a date.</string>
+    <string name="event_is_today">It’s today • %1$s</string>
+    <string name="started_today">Started today • %1$s</string>
+
+    <plurals name="days_left">
+        <item quantity="one">%1$d day left • %2$s</item>
+        <item quantity="other">%1$d days left • %2$s</item>
+    </plurals>
+
+    <plurals name="days_since">
+        <item quantity="one">%1$d day since • %2$s</item>
+        <item quantity="other">%1$d days since • %2$s</item>
+    </plurals>
+
     <string name="appearance_title">Number style</string>
-    <string name="appearance_subtitle">Choose how the day looks in your status bar.</string>
+    <string name="appearance_subtitle">Choose how the number looks in the status bar.</string>
     <string name="style_bold">Bold</string>
     <string name="style_clean">Clean</string>
     <string name="style_compact">Compact</string>
 
     <string name="premium_title">DatePin Premium</string>
-    <string name="premium_subtitle">More personalization. One-time purchase. No subscription.</string>
+    <string name="premium_subtitle">More dates and more freedom. One-time purchase. No subscription.</string>
     <string name="premium_badge">PREMIUM</string>
-    <string name="premium_lifetime">Lifetime</string>
     <string name="premium_launch_price">Planned launch price: R$ 7.90</string>
     <string name="premium_normal_price">Then: R$ 12.90</string>
     <string name="premium_not_for_sale">Payments are not enabled in this test version yet.</string>
+    <string name="premium_feature_events">Unlimited dates and counters</string>
+    <string name="premium_feature_recurring">Recurring events</string>
+    <string name="premium_feature_rotation">Automatic item rotation</string>
     <string name="premium_feature_styles">More visual styles</string>
-    <string name="premium_feature_week">Week number</string>
-    <string name="premium_feature_year_day">Day of year</string>
-    <string name="premium_feature_formats">Custom formats</string>
     <string name="premium_feature_widgets">Extra widgets</string>
-    <string name="premium_feature_presets">Quick presets</string>
-    <string name="premium_preview_title">Premium preview</string>
-    <string name="premium_preview_desc">These features are prepared for the paid version, but billing is not enabled yet.</string>
-    <string name="premium_locked">Locked</string>
-    <string name="premium_unlocked">Premium active</string>
+    <string name="premium_feature_formats">Custom formats</string>
 
     <string name="free_title">Free forever</string>
     <string name="free_item_day">Current day in status bar</string>
+    <string name="free_item_event">1 custom countdown</string>
     <string name="free_item_boot">Returns after reboot</string>
     <string name="free_item_midnight">Updates automatically at midnight</string>
     <string name="free_item_styles">3 included styles</string>
