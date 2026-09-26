@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,11 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
 import java.time.LocalDate
 
 class MainActivity : ComponentActivity() {
@@ -56,6 +58,7 @@ class MainActivity : ComponentActivity() {
             DatePinScreen(
                 initiallyActive = DatePinManager.isEnabled(this),
                 initialStyle = DatePinManager.iconStyle(this),
+                premiumUnlocked = PremiumManager.isPremium(this),
                 notificationsAllowed = DatePinManager.notificationsAllowed(this),
                 onEnable = { DatePinManager.setEnabled(this, true) },
                 onDisable = { DatePinManager.setEnabled(this, false) },
@@ -69,6 +72,7 @@ class MainActivity : ComponentActivity() {
 private fun DatePinScreen(
     initiallyActive: Boolean,
     initialStyle: String,
+    premiumUnlocked: Boolean,
     notificationsAllowed: Boolean,
     onEnable: () -> Unit,
     onDisable: () -> Unit,
@@ -92,6 +96,7 @@ private fun DatePinScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(horizontal = 24.dp, vertical = 28.dp)
             ) {
                 Text(
@@ -116,83 +121,26 @@ private fun DatePinScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(22.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(R.string.today_label),
-                            style = MaterialTheme.typography.labelLarge
-                        )
-
-                        Text(
-                            text = today.dayOfMonth.toString(),
-                            fontSize = 64.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineHeight = 68.sp
-                        )
-
-                        Text(
-                            text = if (active) {
-                                stringResource(R.string.status_active)
-                            } else {
-                                stringResource(R.string.status_inactive)
-                            },
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-
-                        Text(
-                            text = if (active) {
-                                stringResource(R.string.status_active_desc)
-                            } else {
-                                stringResource(R.string.status_inactive_desc)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(top = 6.dp)
-                        )
-
-                        Button(
-                            onClick = {
-                                if (active) {
-                                    onDisable()
-                                    active = false
-                                } else if (
-                                    notificationsAllowed ||
-                                    Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
-                                ) {
-                                    onEnable()
-                                    active = true
-                                } else {
-                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 20.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            contentPadding = ButtonDefaults.ContentPadding
+                StatusCard(
+                    day = today.dayOfMonth,
+                    active = active,
+                    notificationsAllowed = notificationsAllowed,
+                    onEnable = {
+                        if (
+                            notificationsAllowed ||
+                            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
                         ) {
-                            Text(
-                                if (active) {
-                                    stringResource(R.string.deactivate)
-                                } else {
-                                    stringResource(R.string.activate)
-                                }
-                            )
+                            onEnable()
+                            active = true
+                        } else {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
+                    },
+                    onDisable = {
+                        onDisable()
+                        active = false
                     }
-                }
+                )
 
                 Spacer(modifier = Modifier.height(28.dp))
 
@@ -243,7 +191,13 @@ private fun DatePinScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
+                Spacer(modifier = Modifier.height(30.dp))
+
+                FreeSection()
+
+                Spacer(modifier = Modifier.height(26.dp))
+
+                PremiumSection(unlocked = premiumUnlocked)
 
                 Text(
                     text = stringResource(R.string.privacy_line),
@@ -251,10 +205,193 @@ private fun DatePinScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 24.dp)
+                        .padding(top = 30.dp, bottom = 18.dp)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun StatusCard(
+    day: Int,
+    active: Boolean,
+    notificationsAllowed: Boolean,
+    onEnable: () -> Unit,
+    onDisable: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(22.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.today_label),
+                style = MaterialTheme.typography.labelLarge
+            )
+
+            Text(
+                text = day.toString(),
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Bold,
+                lineHeight = 68.sp
+            )
+
+            Text(
+                text = if (active) {
+                    stringResource(R.string.status_active)
+                } else {
+                    stringResource(R.string.status_inactive)
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text(
+                text = if (active) {
+                    stringResource(R.string.status_active_desc)
+                } else {
+                    stringResource(R.string.status_inactive_desc)
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+
+            Button(
+                onClick = if (active) onDisable else onEnable,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp),
+                shape = RoundedCornerShape(16.dp),
+                contentPadding = ButtonDefaults.ContentPadding
+            ) {
+                Text(
+                    if (active) {
+                        stringResource(R.string.deactivate)
+                    } else {
+                        stringResource(R.string.activate)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FreeSection() {
+    Text(
+        text = stringResource(R.string.free_title),
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+    )
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(top = 12.dp)
+    ) {
+        FeatureLine("✓", stringResource(R.string.free_item_day))
+        FeatureLine("✓", stringResource(R.string.free_item_boot))
+        FeatureLine("✓", stringResource(R.string.free_item_midnight))
+        FeatureLine("✓", stringResource(R.string.free_item_styles))
+    }
+}
+
+@Composable
+private fun PremiumSection(unlocked: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.premium_badge),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+
+            Text(
+                text = stringResource(R.string.premium_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.premium_subtitle),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 6.dp)
+            )
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                PremiumFeature(stringResource(R.string.premium_feature_styles), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_week), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_year_day), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_formats), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_widgets), unlocked)
+                PremiumFeature(stringResource(R.string.premium_feature_presets), unlocked)
+            }
+
+            Text(
+                text = stringResource(R.string.premium_launch_price),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 18.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.premium_normal_price),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+
+            Text(
+                text = stringResource(R.string.premium_not_for_sale),
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun PremiumFeature(label: String, unlocked: Boolean) {
+    FeatureLine(
+        icon = if (unlocked) "✓" else "🔒",
+        text = label
+    )
+}
+
+@Composable
+private fun FeatureLine(icon: String, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = icon,
+            modifier = Modifier.padding(end = 10.dp)
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
@@ -289,7 +426,7 @@ private fun StyleChoice(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = "25",
+                text = "26",
                 fontWeight = previewWeight,
                 style = MaterialTheme.typography.titleMedium
             )
