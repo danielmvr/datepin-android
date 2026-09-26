@@ -276,20 +276,28 @@ object DatePinManager {
         val baseSize = when (length) {
             1 -> 74f
             2 -> 62f
-            else -> 44f
+            3 -> 48f
+            else -> 38f
         }
 
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             textAlign = Paint.Align.CENTER
-            typeface = when (style) {
-                "clean" -> Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
-                "compact" -> Typeface.create("sans-serif-condensed", Typeface.BOLD)
+
+            typeface = when {
+                length >= 3 -> Typeface.create(
+                    "sans-serif-condensed",
+                    if (style == "clean") Typeface.NORMAL else Typeface.BOLD
+                )
+                style == "clean" -> Typeface.create(Typeface.DEFAULT, Typeface.NORMAL)
+                style == "compact" -> Typeface.create("sans-serif-condensed", Typeface.BOLD)
                 else -> Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             }
-            textSize = when (style) {
-                "clean" -> baseSize - 4f
-                "compact" -> baseSize + 4f
+
+            textSize = when {
+                length >= 3 -> baseSize
+                style == "clean" -> baseSize - 4f
+                style == "compact" -> baseSize + 4f
                 else -> baseSize
             }
         }
