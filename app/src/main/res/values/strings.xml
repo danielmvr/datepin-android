@@ -78,4 +78,13 @@
     <string name="since_date_invalid">Para “Desde”, escolha hoje ou uma data passada.</string>
     <string name="new_date_premium">🔒 Nova data • Premium</string>
     <string name="premium_events_active">Premium ativo: datas personalizadas ilimitadas.</string>
+    <string name="recurrence_label">Repetição</string>
+    <string name="recurrence_none">Não repetir</string>
+    <string name="recurrence_annual">Todo ano</string>
+    <string name="recurrence_monthly">Todo mês</string>
+    <string name="recurrence_annual_locked">🔒 Todo ano • Premium</string>
+    <string name="recurrence_monthly_locked">🔒 Todo mês • Premium</string>
+    <string name="recurrence_hint">O DatePin calcula automaticamente a próxima ou a última ocorrência.</string>
+    <string name="recurrence_badge_annual">↻ ANUAL</string>
+    <string name="recurrence_badge_monthly">↻ MENSAL</string>
 </resources>
